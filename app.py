@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template
 import dns.resolver
 import requests
-import re
 
 app = Flask(__name__)
 
@@ -29,12 +28,28 @@ def check_spf(domain):
         answers = dns.resolver.resolve(domain, 'TXT')
         for rdata in answers:
             if "v=spf1" in rdata.to_text():
-                return True, rdata.to_text()
+                spf_record = rdata.to_text()
+                return True, parse_spf_record(spf_record)
         return False, "No SPF record found"
     except dns.resolver.NoAnswer:
         return False, "No SPF record found"
     except Exception as e:
         return False, str(e)
+
+def parse_spf_record(spf_record):
+    mechanisms = []
+    for part in spf_record.split():
+        if '=' in part:
+            prefix, value = part.split('=', 1)
+            mechanisms.append((prefix, '', '', '', ''))
+        elif ':' in part:
+            prefix, value = part.split(':', 1)
+            mechanisms.append((prefix, 'include', value, 'Pass', 'The specified domain is searched for an \'allow\'.'))
+        elif part.startswith('-'):
+            mechanisms.append((part, '', '', 'Fail', 'Always matches. It goes at the end of your record.'))
+        else:
+            mechanisms.append((part, '', '', '', ''))
+    return mechanisms
 
 def check_dmarc(domain):
     try:
