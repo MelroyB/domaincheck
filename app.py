@@ -1,6 +1,7 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template
 import dns.resolver
 import requests
+import re
 
 app = Flask(__name__)
 
@@ -35,6 +36,25 @@ def check_spf(domain):
     except Exception as e:
         return False, str(e)
 
+def check_dmarc(domain):
+    try:
+        dmarc_domain = f'_dmarc.{domain}'
+        answers = dns.resolver.resolve(dmarc_domain, 'TXT')
+        dmarc_record = answers[0].to_text().strip('"')
+        return True, parse_dmarc_record(dmarc_record)
+    except dns.resolver.NoAnswer:
+        return False, "No DMARC record found"
+    except Exception as e:
+        return False, str(e)
+
+def parse_dmarc_record(dmarc_record):
+    tags = {}
+    for tag in dmarc_record.split(';'):
+        if '=' in tag:
+            key, value = tag.strip().split('=', 1)
+            tags[key] = value
+    return tags
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -43,11 +63,13 @@ def index():
         security_txt_status, security_txt_content = check_security_txt(domain)
         dkim_status, dkim_content = check_dkim(domain)
         spf_status, spf_content = check_spf(domain)
-        
+        dmarc_status, dmarc_content = check_dmarc(domain)
+
         results = {
             'security_txt': {'status': security_txt_status, 'content': security_txt_content},
             'dkim': {'status': dkim_status, 'content': dkim_content},
             'spf': {'status': spf_status, 'content': spf_content},
+            'dmarc': {'status': dmarc_status, 'content': dmarc_content},
         }
         
         return render_template('results.html', domain=domain, results=results)
