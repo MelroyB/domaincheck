@@ -17,7 +17,7 @@
     <h2>SPF:</h2>
     <p>Status: {{ 'Found' if results.spf.status else 'Not Found' }}</p>
     {% if results.spf.status %}
-        <pre>{{ results.spf.content }}</pre>
+        <p>Raw Record: {{ results.spf.raw }}</p>
         <table border="1">
             <tr>
                 <th>Prefix</th>
