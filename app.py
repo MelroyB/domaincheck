@@ -7,7 +7,10 @@ app = Flask(__name__)
 def check_security_txt(domain):
     try:
         response = requests.get(f'https://{domain}/.well-known/security.txt', timeout=5)
-        return response.status_code == 200, response.text
+        if response.status_code == 200 and 'text/plain' in response.headers.get('Content-Type', ''):
+            return True, response.text
+        else:
+            return False, "Security.txt not found or the response is not in plain text"
     except requests.RequestException:
         return False, "Unable to retrieve security.txt"
 
