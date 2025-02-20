@@ -1,0 +1,19 @@
+# Gebruik een basis Python-image
+FROM python:3.11-slim
+
+# Installeer git
+RUN apt-get update && apt-get install -y git && apt-get clean
+
+# Stel de werkdirectory in
+WORKDIR /app
+
+# Kopieer het startup script naar de container
+COPY start.sh /start.sh
+
+# Maak het script uitvoerbaar
+RUN chmod +x /start.sh
+
+# Definieer de commando dat wordt uitgevoerd wanneer de container start
+CMD ["/start.sh"]
+
+
