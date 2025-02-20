@@ -28,30 +28,30 @@ def check_spf(domain):
         answers = dns.resolver.resolve(domain, 'TXT')
         for rdata in answers:
             if "v=spf1" in rdata.to_text():
-                spf_record = rdata.to_text()
-                return True, parse_spf_record(spf_record)
-        return False, "No SPF record found"
+                spf_record = rdata.to_text().strip('"')
+                return True, spf_record, parse_spf_record(spf_record)
+        return False, "No SPF record found", []
     except dns.resolver.NoAnswer:
-        return False, "No SPF record found"
+        return False, "No SPF record found", []
     except Exception as e:
-        return False, str(e)
+        return False, str(e), []
 
 def parse_spf_record(spf_record):
     mechanisms = []
     parts = spf_record.split()
     for part in parts:
         part = part.strip('"')
-        if part.startswith(('include:', 'ip4:', 'ip6:')):
+        if part.startswith('v=spf1'):
+            mechanisms.append(('v', 'spf1', '', '', 'The SPF record version'))
+        elif part.startswith(('include:', 'ip4:', 'ip6:')):
             prefix, value = part.split(':', 1)
             if prefix == 'include':
                 description = "The specified domain is searched for an 'allow'."
             else:
                 description = "IP addresses are allowed."
-            mechanisms.append((prefix, 'include', value, 'Pass', description))
+            mechanisms.append((prefix, prefix, value, 'Pass', description))
         elif part == '-all':
             mechanisms.append((part, '', '', 'Fail', 'Always matches. It goes at the end of your record.'))
-        elif part.startswith('v=spf1'):
-            mechanisms.append(('v', 'spf1', '', '', 'The SPF record version'))
         else:
             mechanisms.append((part, '', '', '', ''))
     return mechanisms
@@ -82,13 +82,13 @@ def index():
         
         security_txt_status, security_txt_content = check_security_txt(domain)
         dkim_status, dkim_content = check_dkim(domain)
-        spf_status, spf_content = check_spf(domain)
+        spf_status, spf_raw, spf_content = check_spf(domain)
         dmarc_status, dmarc_content = check_dmarc(domain)
 
         results = {
             'security_txt': {'status': security_txt_status, 'content': security_txt_content},
             'dkim': {'status': dkim_status, 'content': dkim_content},
-            'spf': {'status': spf_status, 'content': spf_content},
+            'spf': {'status': spf_status, 'raw': spf_raw, 'content': spf_content},
             'dmarc': {'status': dmarc_status, 'content': dmarc_content},
         }
         
@@ -97,4 +97,6 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
+    app.run(debug=True)
+
     app.run(host='0.0.0.0', debug=True)
