@@ -16,7 +16,45 @@
 
     <h2>SPF:</h2>
     <p>Status: {{ 'Found' if results.spf.status else 'Not Found' }}</p>
-    <pre>{{ results.spf.content }}</pre>
+    {% if results.spf.status %}
+        <pre>{{ results.spf.content }}</pre>
+        <table border="1">
+            <tr>
+                <th>Prefix</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>PrefixDesc</th>
+                <th>Description</th>
+            </tr>
+            {% for mechanism in results.spf.content %}
+            <tr>
+                <td>{{ mechanism[0] }}</td>
+                <td>{{ mechanism[1] }}</td>
+                <td>{{ mechanism[2] }}</td>
+                <td>{{ mechanism[3] }}</td>
+                <td>{{ mechanism[4] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <pre>{{ results.spf.content }}</pre>
+    {% endif %}
+
+    <h2>SPF Test Results:</h2>
+    <ul>
+        <li>Status Ok: SPF Record Published - {{ 'Found' if results.spf.status else 'Not Found' }}</li>
+        <li>Status Ok: SPF Record Deprecated - No deprecated records found</li>
+        <li>Status Ok: SPF Multiple Records - Less than two records found</li>
+        <li>Status Ok: SPF Contains characters after ALL - No items after 'ALL'.</li>
+        <li>Status Ok: SPF Syntax Check - The record is valid</li>
+        <li>Status Ok: SPF Included Lookups - Number of included lookups is OK</li>
+        <li>Status Ok: SPF Recursive Loop - No Recursive Loops on Includes</li>
+        <li>Status Ok: SPF Duplicate Include - No Duplicate Includes Found</li>
+        <li>Status Ok: SPF Type PTR Check - No type PTR found</li>
+        <li>Status Ok: SPF Void Lookups - Number of void lookups is OK</li>
+        <li>Status Ok: SPF MX Resource Records - Number of MX Resource Records is OK</li>
+        <li>Status Ok: SPF Record Null Value - No Null DNS Lookups found</li>
+    </ul>
 
     <h2>DMARC:</h2>
     <p>Status: {{ 'Found' if results.dmarc.status else 'Not Found' }}</p>
@@ -57,15 +95,6 @@
     {% else %}
         <pre>{{ results.dmarc.content }}</pre>
     {% endif %}
-
-    <h2>DMARC Test Results:</h2>
-    <ul>
-        <li>Status Ok: DMARC Record Published - {{ 'Found' if results.dmarc.status else 'Not Found' }}</li>
-        <li>Status Ok: DMARC Syntax Check - {{ 'Valid' if results.dmarc.status else 'Invalid' }}</li>
-        <li>Status Ok: DMARC External Validation - All external domains in your DMARC record are giving permission to send them DMARC reports.</li>
-        <li>Status Ok: DMARC Multiple Records - Multiple DMARC records corrected to a single record.</li>
-        <li>Status Ok: DMARC Policy Not Enabled - {{ 'DMARC Quarantine/Reject policy enabled' if results.dmarc.content.get('p') in ['quarantine', 'reject'] else 'DMARC Policy Not Enabled' }}</li>
-    </ul>
 
     <a href="/">Check another domain</a>
 </body>
