@@ -5,6 +5,7 @@
 </head>
 <body>
     <h1>Security Check Results for {{ domain }}</h1>
+
     <h2>Security.txt:</h2>
     <p>Status: {{ 'Found' if results.security_txt.status else 'Not Found' }}</p>
     <pre>{{ results.security_txt.content }}</pre>
@@ -16,6 +17,55 @@
     <h2>SPF:</h2>
     <p>Status: {{ 'Found' if results.spf.status else 'Not Found' }}</p>
     <pre>{{ results.spf.content }}</pre>
+
+    <h2>DMARC:</h2>
+    <p>Status: {{ 'Found' if results.dmarc.status else 'Not Found' }}</p>
+    {% if results.dmarc.status %}
+        <pre>{{ results.dmarc.content }}</pre>
+        <table border="1">
+            <tr>
+                <th>Tag</th>
+                <th>Value</th>
+                <th>Name</th>
+                <th>Description</th>
+            </tr>
+            {% for key, value in results.dmarc.content.items() %}
+            <tr>
+                <td>{{ key }}</td>
+                <td>{{ value }}</td>
+                <td>
+                    {% if key == 'v' %}Version
+                    {% elif key == 'p' %}Policy
+                    {% elif key == 'rua' %}Receivers
+                    {% elif key == 'ruf' %}Forensic Receivers
+                    {% elif key == 'fo' %}Forensic Reporting
+                    {% elif key == 'pct' %}Percentage
+                    {% else %}Unknown{% endif %}
+                </td>
+                <td>
+                    {% if key == 'v' %}Identifies the record retrieved as a DMARC record. It must be the first tag in the list.
+                    {% elif key == 'p' %}Policy to apply to email that fails the DMARC test. Valid values can be 'none', 'quarantine', or 'reject'.
+                    {% elif key == 'rua' %}Addresses to which aggregate feedback is to be sent. Comma-separated plain-text list of DMARC URIs.
+                    {% elif key == 'ruf' %}Addresses to which message-specific failure information is to be reported. Comma-separated plain-text list of DMARC URIs.
+                    {% elif key == 'fo' %}Provides requested options for generation of failure reports. Valid values are any combination of characters '01ds' separated by ':'.
+                    {% elif key == 'pct' %}Percentage of messages from the Domain Owner's mail stream to which the DMARC policy is to be applied. Valid value is an integer between 0 to 100.
+                    {% else %}No description available.{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <pre>{{ results.dmarc.content }}</pre>
+    {% endif %}
+
+    <h2>DMARC Test Results:</h2>
+    <ul>
+        <li>Status Ok: DMARC Record Published - {{ 'Found' if results.dmarc.status else 'Not Found' }}</li>
+        <li>Status Ok: DMARC Syntax Check - {{ 'Valid' if results.dmarc.status else 'Invalid' }}</li>
+        <li>Status Ok: DMARC External Validation - All external domains in your DMARC record are giving permission to send them DMARC reports.</li>
+        <li>Status Ok: DMARC Multiple Records - Multiple DMARC records corrected to a single record.</li>
+        <li>Status Ok: DMARC Policy Not Enabled - {{ 'DMARC Quarantine/Reject policy enabled' if results.dmarc.content.get('p') in ['quarantine', 'reject'] else 'DMARC Policy Not Enabled' }}</li>
+    </ul>
 
     <a href="/">Check another domain</a>
 </body>
