@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  massurlchecker:
+    image: ghcr.io/melroyb/massurlchecker:main
+    container_name: massurlchecker
+    ports:
+      - "5000:5000"
+    environment:
+      - REPO_URL=https://github.com/MelroyB/massurlchecker"
+    restart: unless-stopped
