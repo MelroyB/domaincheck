@@ -38,15 +38,20 @@ def check_spf(domain):
 
 def parse_spf_record(spf_record):
     mechanisms = []
-    for part in spf_record.split():
-        if '=' in part:
-            prefix, value = part.split('=', 1)
-            mechanisms.append((prefix, '', '', '', ''))
-        elif ':' in part:
+    parts = spf_record.split()
+    for part in parts:
+        part = part.strip('"')
+        if part.startswith(('include:', 'ip4:', 'ip6:')):
             prefix, value = part.split(':', 1)
-            mechanisms.append((prefix, 'include', value, 'Pass', 'The specified domain is searched for an \'allow\'.'))
-        elif part.startswith('-'):
+            if prefix == 'include':
+                description = "The specified domain is searched for an 'allow'."
+            else:
+                description = "IP addresses are allowed."
+            mechanisms.append((prefix, 'include', value, 'Pass', description))
+        elif part == '-all':
             mechanisms.append((part, '', '', 'Fail', 'Always matches. It goes at the end of your record.'))
+        elif part.startswith('v=spf1'):
+            mechanisms.append(('v', 'spf1', '', '', 'The SPF record version'))
         else:
             mechanisms.append((part, '', '', '', ''))
     return mechanisms
